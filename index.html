@@ -160,7 +160,7 @@
             <label>Contraseña</label>
             <div class="input-wrapper">
                 <i class="fa-solid fa-lock main-icon"></i>
-                <input type="password" id="login-pass" placeholder="••••••••">
+                <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.keyCode==32) return false;">
                 <i class="fa-solid fa-eye toggle-pass" id="eye-icon-login" onclick="togglePasswordVisibility('login-pass', 'eye-icon-login')"></i>
             </div>
         </div>
@@ -360,7 +360,7 @@
             <label>Cambiar Contraseña (Opcional)</label>
             <div class="input-wrapper">
                 <i class="fa-solid fa-key main-icon"></i>
-                <input type="password" id="upd-new-pass" placeholder="Dejar en blanco para no cambiar">
+                <input type="password" id="upd-new-pass" placeholder="Mantener Actual" onkeydown="if(event.keyCode==32) return false;">
                 <i class="fa-solid fa-eye toggle-pass" id="eye-icon-upd" onclick="togglePasswordVisibility('upd-new-pass', 'eye-icon-upd')"></i>
             </div>
         </div>
@@ -443,7 +443,9 @@
     }
 
     async function generarHash(password) {
-        const msgUint8 = new TextEncoder().encode(password);
+        // Limpiamos espacios por si acaso antes del hash
+        const cleanPass = password.replace(/\s/g, '');
+        const msgUint8 = new TextEncoder().encode(cleanPass);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
         return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
@@ -477,7 +479,9 @@
     async function validarAcceso() {
         const dni = document.getElementById('login-dni').value;
         const historia = document.getElementById('login-historia').value;
-        const passPlana = document.getElementById('login-pass').value;
+        // Limpiamos espacios en blanco de la contraseña recibida
+        const passRaw = document.getElementById('login-pass').value;
+        const passPlana = passRaw.replace(/\s/g, '');
 
         if(!dni || !historia || !passPlana) return alert("Complete todos los campos.");
 
@@ -597,7 +601,10 @@ async function guardarDatos() {
     const parVal = document.getElementById('upd-par').value;
     const diagVal = document.getElementById('upd-diag-p').value;
     const telNum = document.getElementById('rep-num').value;
-    const newPass = document.getElementById('upd-new-pass').value;
+    
+    // Limpiamos espacios en blanco de la nueva contraseña si existiera
+    const newPassRaw = document.getElementById('upd-new-pass').value;
+    const newPass = newPassRaw.replace(/\s/g, '');
 
     if(!munVal || !parVal) return alert("Seleccione Municipio y Parroquia");
     if(!diagVal) return alert("Seleccione un Diagnóstico Principal");
@@ -645,8 +652,8 @@ async function guardarDatos() {
         ultima_edicion: new Date()
     };
 
-    // Si el usuario escribió una nueva contraseña, generar hash e incluirla
-    if (newPass.trim() !== "") {
+    // Solo si el usuario escribió algo (después de limpiar espacios)
+    if (newPass !== "") {
         updates.password = await generarHash(newPass);
     }
 
